@@ -191,14 +191,14 @@ bool solved(const int(&map)[9][9])
 class Try
 {   
 public:
-    void setNewTry(int(&map)[9][9])
+    void setNewTry(int(&map)[9][9], Variants(&variants)[9][9])
     {
         triesVector.emplace_back();
         int *data = triesVector.back().data();
         memcpy(data, map, sizeof(int) * 81);
         //choose what to try
     }
-    void setNextTry()
+    void setNextTry(int(&map)[9][9], Variants(&variants)[9][9])
     {
 
     }
@@ -216,7 +216,7 @@ bool solve(int (&map)[9][9])
     {
         if (!buildVariants(map, variants))
         {
-            //restoreLastTry(map);
+            m_try.setNextTry(map, variants);
             buildVariants(map, variants);
         }
         while (checkTrivial(map, variants) || checkLines(map, variants) || checkColumns(map, variants));
@@ -224,7 +224,7 @@ bool solve(int (&map)[9][9])
         {
             return true;
         }
-        //setNewTry(map, triesVector);
+        m_try.setNewTry(map, variants);
     } while (true);
     return false;
 }
@@ -233,7 +233,6 @@ double f(double f);
 
 int main (int ac, char **av)
 {
-    std::cout << powf(0.1, 0.1);
     int sudoku[9][9] = {
         { 0, 0, 0, 2, 0, 0, 5, 0, 0 },
         { 0, 6, 0, 0, 0, 3, 0, 1, 0 },
