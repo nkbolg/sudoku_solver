@@ -27,3 +27,8 @@
 *.exe
 *.out
 *.app
+
+# MSVS files
+Debug/*
+Release/*
+*.vcxproj.*
