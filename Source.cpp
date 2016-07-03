@@ -188,29 +188,30 @@ bool solved(const int(&map)[9][9])
     return true;
 }
 
-//class Try
-//{
-//public:
-//    setNewTry();
-//    setNextTry();
-//private:
-//
-//};
-//
-//typedef std::vector < std::array<int, 81> > TryVec;
-//
-//void setNewTry(const int(&map)[9][9], TryVec &vec)
-//{
-//    vec.emplace_back();
-//    int *data = vec.back().data();
-//    memcpy(data, map, sizeof(int) * 81);
-//
-//}
+class Try
+{   
+public:
+    void setNewTry(int(&map)[9][9])
+    {
+        triesVector.emplace_back();
+        int *data = triesVector.back().data();
+        memcpy(data, map, sizeof(int) * 81);
+        //choose what to try
+    }
+    void setNextTry()
+    {
+
+    }
+private:
+    typedef std::vector < std::array<int, 81> > TryVec;
+    TryVec triesVector;
+
+};
 
 bool solve(int (&map)[9][9])
 {
     Variants variants[9][9];
-    //TryVec triesVector;
+    Try m_try;
     do 
     {
         if (!buildVariants(map, variants))
