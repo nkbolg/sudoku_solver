@@ -51,6 +51,7 @@ bool inSquare(const int(&map)[9][9], int curVal, int i, int j)
     return false;
 }
 
+//TODO: переписать через dirty
 bool buildVariants( const int(&map)[9][9], Variants (&variants)[9][9])
 {
     for (int i = 0; i < 9; i++)
@@ -191,21 +192,42 @@ bool solved(const int(&map)[9][9])
 class Try
 {   
 public:
-    void setNewTry(int(&map)[9][9], Variants(&variants)[9][9])
+    bool setNewTry(int(&map)[9][9], Variants(&variants)[9][9])
     {
-        triesVector.emplace_back();
-        int *data = triesVector.back().data();
-        memcpy(data, map, sizeof(int) * 81);
-        //choose what to try
+        saveState(map);
+        return makeGuess(map, variants);
     }
-    void setNextTry(int(&map)[9][9], Variants(&variants)[9][9])
+    bool setNextTry(int(&map)[9][9], Variants(&variants)[9][9])
     {
-
+        loadState(map);
+        buildVariants(map, variants);
+        return makeGuess(map, variants);
     }
 private:
-    typedef std::vector < std::array<int, 81> > TryVec;
-    TryVec triesVector;
+    bool makeGuess(int(&map)[9][9], Variants(&variants)[9][9])
+    {
+        //Сохранить variants в possibleGuesses частично, с учётом заполненности второго - в первый раз, полностью
+        //найти первый подходящий (элемент с двумя или больше вариантами) в любом квадрате, подставить первое число в map, запомним кого подставляем для первого раза,
+        //если не первый раз - (уже откатились) - берём следующий. Достаточно помнить номер перебираемого и его позицию.
+    }
 
+    void saveState(const int(&map)[9][9])
+    {
+        cacheVector.emplace_back();
+        int *data = cacheVector.back().data();
+        memcpy(data, map, sizeof(int) * 81);
+    }
+
+    void loadState(int(&map)[9][9])
+    {
+        const int *data = cacheVector.back().data();
+        memcpy(map, data, sizeof(int) * 81);
+        cacheVector.pop_back();
+    }
+
+    typedef std::vector < std::array<int, 81> > CacheVec;
+    CacheVec cacheVector;
+    Variants possibleGuesses;
 };
 
 bool solve(int (&map)[9][9])
@@ -217,7 +239,6 @@ bool solve(int (&map)[9][9])
         if (!buildVariants(map, variants))
         {
             m_try.setNextTry(map, variants);
-            buildVariants(map, variants);
         }
         while (checkTrivial(map, variants) || checkLines(map, variants) || checkColumns(map, variants));
         if (solved(map))
@@ -228,8 +249,6 @@ bool solve(int (&map)[9][9])
     } while (true);
     return false;
 }
-
-double f(double f);
 
 int main (int ac, char **av)
 {
