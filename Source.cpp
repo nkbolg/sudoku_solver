@@ -1,7 +1,10 @@
-#include <iostream>
+
+#define _CRT_SECURE_NO_WARNINGS
 
 #include <vector>
 #include <array>
+
+#include <cstdio>
 
 struct Variants
 {
@@ -195,10 +198,12 @@ class Try
 public:
     void setNewTry(int(&map)[9][9], Variants(&variants)[9][9])
     {
-        saveState(map);
+        cacheVector.emplace_back();
+        int *data = cacheVector.back().data();
+        memcpy(data, map, sizeof(int) * 81);
         int best_i = 0;
         int best_j = 0;
-        int best_count = variants[0][0].count;
+        int best_count = 9;
         for (int i = 0; i < 9; i++)
         {
             for (int j = 0; j < 9; j++)
@@ -211,7 +216,9 @@ public:
                 }
             }
         }
-        currentGuess = { best_i, best_j, 0 };
+        guessVec.emplace_back();
+        guessVec.back().i = best_i;
+        guessVec.back().j = best_j;
         for (int i = 0; i < 9; i++)
         {
             if (variants[best_i][best_j].canBe[i])
@@ -224,13 +231,29 @@ public:
     }
     void setNextTry(int(&map)[9][9], Variants(&variants)[9][9])
     {
-        loadState(map);
-        int num = ++currentGuess.number;
+        do
+        {
+            const int *data = cacheVector.back().data();
+            memcpy(map, data, sizeof(int) * 81);
+            buildVariants(map, variants);
+            ++guessVec.back().number;
+            if (guessVec.back().number < variants[guessVec.back().i][guessVec.back().j].count)
+            {
+                break;
+            }
+            else
+            {
+                cacheVector.pop_back();
+                guessVec.pop_back();
+            }
+
+        } while (true);
+        int num = guessVec.back().number;
         for (int i = 0; i < 9; i++)
         {
-            if (variants[currentGuess.i][currentGuess.j].canBe[i] && (num-- == 0))
+            if (variants[guessVec.back().i][guessVec.back().j].canBe[i] && (num-- == 0))
             {
-                map[currentGuess.i][currentGuess.j] = i + 1;
+                map[guessVec.back().i][guessVec.back().j] = i + 1;
                 break;
             }
         }
@@ -238,28 +261,18 @@ public:
     }
 private:
 
-    void saveState(const int(&map)[9][9])
-    {
-        cacheVector.emplace_back();
-        int *data = cacheVector.back().data();
-        memcpy(data, map, sizeof(int) * 81);
-    }
-
-    void loadState(int(&map)[9][9])
-    {
-        const int *data = cacheVector.back().data();
-        memcpy(map, data, sizeof(int) * 81);
-        cacheVector.pop_back();
-    }
-
-    typedef std::vector < std::array<int, 81> > CacheVec;
-    CacheVec cacheVector;
-    struct 
+    struct Guess
     {
         int i;
         int j;
         int number;
-    } currentGuess;
+    };
+
+    typedef std::vector < std::array<int, 81> > CacheVec;
+    typedef std::vector < Guess > GuessVec;
+    CacheVec cacheVector;
+    GuessVec guessVec;
+    
 };
 
 bool solve(int (&map)[9][9])
@@ -284,17 +297,19 @@ bool solve(int (&map)[9][9])
 
 int main ()
 {
-    int sudoku[9][9] = {
-        { 0, 0, 0, 2, 0, 0, 5, 0, 0 },
-        { 0, 6, 0, 0, 0, 3, 0, 1, 0 },
-        { 0, 0, 9, 0, 0, 0, 0, 0, 7 },
-        { 3, 0, 0, 7, 0, 0, 0, 0, 0 },
-        { 0, 0, 5, 0, 0, 9, 0, 0, 6 },
-        { 0, 4, 0, 0, 1, 0, 2, 0, 0 },
-        { 7, 0, 0, 4, 0, 0, 8, 0, 0 },
-        { 0, 2, 0, 0, 5, 0, 0, 9, 0 },
-        { 0, 0, 1, 0, 0, 6, 0, 0, 0 }
-    };
-    solve(sudoku);
+    FILE *f = fopen("testtest.txt", "rb");
+    int sudoku[9][9];
+    int *data = (int*)sudoku;
+    char buf[81];
+    while (!feof(f))
+    {
+        fread(buf, 1, 81, f);
+        for (int i = 0; i < 81; i++)
+        {
+            data[i] = buf[i] - '0';
+        }
+        solve(sudoku);
+    }
+    fclose(f);
 	return 0;
 }
