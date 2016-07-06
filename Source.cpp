@@ -5,6 +5,7 @@
 
 struct Variants
 {
+    // todo: возможно, переписать через хранение только возможных вариантов
     bool canBe[9] = { false };
     bool solved = false;
     int count = 0;
@@ -192,24 +193,50 @@ bool solved(const int(&map)[9][9])
 class Try
 {   
 public:
-    bool setNewTry(int(&map)[9][9], Variants(&variants)[9][9])
+    void setNewTry(int(&map)[9][9], Variants(&variants)[9][9])
     {
         saveState(map);
-        return makeGuess(map, variants);
+        int best_i = 0;
+        int best_j = 0;
+        int best_count = variants[0][0].count;
+        for (int i = 0; i < 9; i++)
+        {
+            for (int j = 0; j < 9; j++)
+            {
+                if (!variants[i][j].solved && variants[i][j].count < best_count)
+                {
+                    best_i = i;
+                    best_j = j;
+                    best_count = variants[i][j].count;
+                }
+            }
+        }
+        currentGuess = { best_i, best_j, 0 };
+        for (int i = 0; i < 9; i++)
+        {
+            if (variants[best_i][best_j].canBe[i])
+            {
+                map[best_i][best_j] = i + 1;
+                break;
+            }
+        }
+        buildVariants(map, variants);
     }
-    bool setNextTry(int(&map)[9][9], Variants(&variants)[9][9])
+    void setNextTry(int(&map)[9][9], Variants(&variants)[9][9])
     {
         loadState(map);
+        int num = ++currentGuess.number;
+        for (int i = 0; i < 9; i++)
+        {
+            if (variants[currentGuess.i][currentGuess.j].canBe[i] && (num-- == 0))
+            {
+                map[currentGuess.i][currentGuess.j] = i + 1;
+                break;
+            }
+        }
         buildVariants(map, variants);
-        return makeGuess(map, variants);
     }
 private:
-    bool makeGuess(int(&map)[9][9], Variants(&variants)[9][9])
-    {
-        //Сохранить variants в possibleGuesses частично, с учётом заполненности второго - в первый раз, полностью
-        //найти первый подходящий (элемент с двумя или больше вариантами) в любом квадрате, подставить первое число в map, запомним кого подставляем для первого раза,
-        //если не первый раз - (уже откатились) - берём следующий. Достаточно помнить номер перебираемого и его позицию.
-    }
 
     void saveState(const int(&map)[9][9])
     {
@@ -227,7 +254,12 @@ private:
 
     typedef std::vector < std::array<int, 81> > CacheVec;
     CacheVec cacheVector;
-    Variants possibleGuesses;
+    struct 
+    {
+        int i;
+        int j;
+        int number;
+    } currentGuess;
 };
 
 bool solve(int (&map)[9][9])
@@ -250,7 +282,7 @@ bool solve(int (&map)[9][9])
     return false;
 }
 
-int main (int ac, char **av)
+int main ()
 {
     int sudoku[9][9] = {
         { 0, 0, 0, 2, 0, 0, 5, 0, 0 },
